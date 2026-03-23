@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pi Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #f5f2eb;
+      --surface:  #edeae1;
+      --border:   #d8d3c8;
+      --text:     #1a1815;
+      --dim:      #8a8478;
+      --accent:   #c84b2f;
+      --mono:     'Azeret Mono', monospace;
+      --sans:     'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      min-height: 100vh;
+      padding: 48px 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--text);
+    }
+
+    .header-left h1 {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .header-left p {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    #refresh-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    #refresh-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+      animation: fadeIn 0.2s ease both;
+    }
+    tbody tr:hover { background: var(--surface); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    tbody td {
+      padding: 11px 12px;
+      vertical-align: middle;
+    }
+
+    .td-num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      width: 32px;
+      text-align: right;
+      padding-right: 16px;
+    }
+
+    .td-name {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text);
+      max-width: 500px;
+    }
+
+    /* Clean up the raw filename for display */
+    .td-name span {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .td-meta {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .td-path {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Show more bar ── */
+    #show-more-bar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-top: 20px;
+    }
+
+    .show-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .show-btn:hover     { border-color: var(--text); color: var(--text); }
+    .show-btn.active    { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .show-btn:first-child { border-radius: 2px 0 0 2px; }
+    .show-btn:last-child  { border-radius: 0 2px 2px 0; }
+
+    #total-count {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      margin-left: 16px;
+    }
+
+    /* ── States ── */
+    #status {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--dim);
+      padding: 48px 0;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    #error {
+      display: none;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 12px 16px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <h1>Pi Dashboard</h1>
+      <p id="last-updated">—</p>
+    </div>
+    <button id="refresh-btn" onclick="load()">↻ Refresh</button>
+  </header>
+
+  <div id="error"></div>
+  <div id="status">Loading…</div>
+
+  <div id="content" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Modified</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <div id="show-more-bar">
+      <button class="show-btn active" onclick="setLimit(5)">Top 5</button>
+      <button class="show-btn" onclick="setLimit(20)">Top 20</button>
+      <button class="show-btn" onclick="setLimit(100)">Top 100</button>
+      <button class="show-btn" onclick="setLimit(null)">All</button>
+      <span id="total-count"></span>
+    </div>
+  </div>
+
+  <script>
+    let allFiles = [];
+    let currentLimit = 5;
+
+    function formatSize(bytes) {
+      if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
+      if (bytes >= 1e6) return (bytes / 1e6).toFixed(0) + ' MB';
+      return (bytes / 1e3).toFixed(0) + ' KB';
+    }
+
+    // Extract just the folder path, not the filename
+    function parentPath(fullPath) {
+      const parts = fullPath.split('/');
+      parts.pop();
+      return parts.join('/') || '/';
+    }
+
+    function setLimit(n) {
+      currentLimit = n;
+      // Update active button
+      document.querySelectorAll('.show-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      render();
+    }
+
+    function render() {
+      const files = currentLimit === null ? allFiles : allFiles.slice(0, currentLimit);
+      const tbody = document.getElementById('tbody');
+
+      tbody.innerHTML = files.map((f, i) => `
+        <tr style="animation-delay: ${i * 20}ms">
+          <td class="td-num">${i + 1}</td>
+          <td class="td-name"><span title="${f.name}">${f.name}</span></td>
+          <td class="td-meta">${formatSize(f.size_bytes)}</td>
+          <td class="td-meta">${f.modified}</td>
+          <td class="td-path" title="${parentPath(f.path)}">${parentPath(f.path)}</td>
+        </tr>
+      `).join('');
+
+      const showing = files.length;
+      const total = allFiles.length;
+      document.getElementById('total-count').textContent =
+        showing === total ? `${total} files` : `showing ${showing} of ${total}`;
+    }
+
+    async function load() {
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('status').textContent = 'Loading…';
+      document.getElementById('status').style.display = 'block';
+      document.getElementById('content').style.display = 'none';
+
+      try {
+        const res  = await fetch('/api/files');
+        const data = await res.json();
+
+        if (!data.ok) {
+          showError(data.error || 'Unknown error');
+          return;
+        }
+
+        allFiles = data.files;
+
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('last-updated').textContent = 'updated ' + now;
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+        render();
+
+      } catch (err) {
+        showError('Could not reach server: ' + err.message);
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('status').style.display = 'none';
+      const el = document.getElementById('error');
+      el.textContent = '⚠ ' + msg;
+      el.style.display = 'block';
+    }
+
+    load();
+  </script>
+
+</body>
+</html>
